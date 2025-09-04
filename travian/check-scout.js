@@ -13,7 +13,7 @@ app.use(express.json())
 puppeteer.use(stealth());
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const RENDER_EXTERNAL_URL = procewss.env.RENDER_EXTERNAL_URL;
+const RENDER_EXTERNAL_URL = process.env.RENDER_EXTERNAL_URL;
 
 const bot = new TelegramBot(BOT_TOKEN, { 
   polling: process.env.NODE_ENV === 'dev' ? true : false,
