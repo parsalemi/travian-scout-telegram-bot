@@ -1,0 +1,28 @@
+{
+  "name": "puppeteer-automation",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "travian:troops": "node travian/train-troops.js",
+    "bot:dev": "cross-env NODE_ENV=dev node travian/check-scout.js",
+    "bot:prod": "cross-env NODE_ENV=prod node travian/check-scout.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.11.0",
+    "cross-env": "^10.0.0",
+    "cross-fetch": "^4.1.0",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "node-cron": "^4.2.1",
+    "node-telegram-bot-api": "^0.66.0",
+    "puppeteer-core": "^24.17.1",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  }
+}
