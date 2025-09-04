@@ -5,17 +5,18 @@ import TelegramBot from "node-telegram-bot-api";
 import dotenv from 'dotenv';
 import express from 'express';
 
-const app = express();
-app.get('/', (req, res) => {
-  res.send('Bot is running');
-})
-
 dotenv.config({path: `.env.${process.env.NODE_ENV}`});
+
+const app = express();
+app.use(express.json())
+
 puppeteer.use(stealth());
+
 const BOT_TOKEN = process.env.BOT_TOKEN;
+const RENDER_EXTERNAL_URL = procewss.env.RENDER_EXTERNAL_URL;
 
 const bot = new TelegramBot(BOT_TOKEN, { 
-  polling: true,
+  polling: process.env.NODE_ENV === 'dev' ? true : false,
   request: {
     proxy: process.env.NODE_ENV === 'dev' ? process.env.PROXY : ''
   }
@@ -148,6 +149,24 @@ async function runScraper(chatId) {
     await browser.close();
   }
 }
-app.listen(8000, () => {
-  console.log('Server is running ...')
+
+app.get('/', (req, res) => {
+  res.send('Bot is running');
 })
+
+app.post('/webhook', (req, res) => {
+  bot.processUpdate(req.body);
+  res.sendStatus(200);
+})
+
+app.listen(8000, async () => {
+  console.log(`✅ Server running on port 8000`);
+
+  if (RENDER_EXTERNAL_URL) {
+    const webhookUrl = `${RENDER_EXTERNAL_URL}/webhook`;
+    await bot.setWebHook(webhookUrl);
+    console.log(`✅ Webhook set to: ${webhookUrl}`);
+  } else {
+    console.error("⚠️ Missing RENDER_EXTERNAL_URL, webhook not set!");
+  }
+});
