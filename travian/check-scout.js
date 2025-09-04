@@ -3,6 +3,12 @@ import stealth from 'puppeteer-extra-plugin-stealth'
 import fs from 'fs';
 import TelegramBot from "node-telegram-bot-api";
 import dotenv from 'dotenv';
+import express from 'express';
+
+const app = express();
+app.get('/', (req, res) => {
+  res.send('Bot is running');
+})
 
 dotenv.config({path: `.env.${process.env.NODE_ENV}`});
 puppeteer.use(stealth());
@@ -48,7 +54,7 @@ async function runScraper(chatId) {
   if (!creds) return;
 
   const browser = await puppeteer.launch({ 
-    executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    executablePath: process.env.NODE_ENV === 'dev' ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe' : '',
     headless: true, 
     defaultViewport: {width: 1300, height: 1000},
     arg: ['--window-size=1300,1000']
@@ -142,3 +148,6 @@ async function runScraper(chatId) {
     await browser.close();
   }
 }
+app.listen(8000, () => {
+  console.log('Server is running ...')
+})
