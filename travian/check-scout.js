@@ -14,17 +14,24 @@ puppeteer.use(stealth());
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const RENDER_EXTERNAL_URL = process.env.RENDER_EXTERNAL_URL;
+const PROXY = process.env.PROXY;
 
 const bot = new TelegramBot(BOT_TOKEN, { 
-  polling: process.env.NODE_ENV === 'dev' ? true : false,
+  polling: true,
   request: {
-    proxy: process.env.NODE_ENV === 'dev' ? process.env.PROXY : ''
+    proxy: PROXY 
   }
 
 });
 
 let jobs = {};
 let userCredentials = {};
+
+bot.on("polling_error", (err) => {
+  console.error("Polling error:", err.code, err.message);
+});
+
+process.on("unhandledRejection", (r) => console.error("unhandledRejection:", r));
 
 bot.onText(/\/login (.+) (.+)/, (msg, match) => {
   const chatId = msg.chat.id;
@@ -35,8 +42,8 @@ bot.onText(/\/login (.+) (.+)/, (msg, match) => {
   if (jobs[chatId]) clearInterval(jobs[chatId]);
 
   bot.sendMessage(chatId, `✅ Credentials saved. I'll check every 5 minutes.`);
-  
-  // jobs[chatId] = setInterval(() => runScraper(chatId), 30000);
+  console.log(username, password);
+  // jobs[chatId] = setInterval(() => runScraper(chatId), 10000);
   jobs[chatId] = setInterval(() => runScraper(chatId), 1000 * 60 * 5);
 });
 
@@ -99,9 +106,9 @@ async function runScraper(chatId) {
         let attacker = '';
         let defender = '';
         
-        const words = msg.split(' ');
-        attacker = words[0];
-        defender = words[2];
+        const words = msg.split('از');
+        attacker = words[0].trim();
+        defender = words[1].trim().split(' ')[0];
 
         results.push({
           id: `${attacker}-${defender}-${time}`,
@@ -130,15 +137,29 @@ async function runScraper(chatId) {
 
     if(newMessages.length > 0) {
       for (let msg of newMessages) {
-        await bot.sendMessage(
-          chatId,
-          `📢 New Alert!\nAttacker: ${msg.attacker}\nDefender: ${msg.defender}\nAlliance: ${msg.alliance}\nTime: ${msg.time}\nMessage: ${msg.message}\n🔗 ${msg.link}`
+        await page.goto(msg.link, {waitUntil: 'networkidle0'});
+        const villages = await page.evaluate(() => {
+          const villages = [];
+          const villagesQuery = Array.from(document.querySelectorAll('a.village'));
+          villagesQuery.map(v => villages.push(v.textContent));
+          return villages;
+        });
+        if(!fs.existsSync('travian/screenshots')) {
+          fs.mkdirSync('travian/screenshots', {recursive: true});
+        };
+        const screenshotPath = `travian/screenshots/${msg.id}.png`;
+        await page.screenshot({path: screenshotPath, fullPage: true});
+
+        await bot.sendPhoto(
+          chatId, screenshotPath, {
+            caption: `📢 New Alert!\nAttacker: ${msg.attacker}\nAttacker village: ${villages[2]}\nDefender: ${msg.defender}\nDefender village: ${villages[3]}\nAlliance: ${msg.alliance}\nTime: ${msg.time}\nMessage: ${msg.message}\n🔗 ${msg.link}`
+          }
         );
+        fs.unlinkSync(screenshotPath);
       } 
     } 
     else {
-      await browser.close();
-      bot.sendMessage(chatId, 'There is no new scouts');
+      console.log('✔ checked');
     }
     
   } catch (err) {
@@ -150,23 +171,3 @@ async function runScraper(chatId) {
   }
 }
 
-app.get('/', (req, res) => {
-  res.send('Bot is running');
-})
-
-app.post('/webhook', (req, res) => {
-  bot.processUpdate(req.body);
-  res.sendStatus(200);
-})
-
-app.listen(8000, async () => {
-  console.log(`✅ Server running on port 8000`);
-
-  if (RENDER_EXTERNAL_URL) {
-    const webhookUrl = `${RENDER_EXTERNAL_URL}/webhook`;
-    await bot.setWebHook(webhookUrl);
-    console.log(`✅ Webhook set to: ${webhookUrl}`);
-  } else {
-    console.error("⚠️ Missing RENDER_EXTERNAL_URL, webhook not set!");
-  }
-});

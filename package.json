@@ -7,6 +7,9 @@
     "travian:troops": "node travian/train-troops.js",
     "bot:dev": "cross-env NODE_ENV=dev node travian/check-scout.js",
     "bot:prod": "cross-env NODE_ENV=prod node travian/check-scout.js",
+    "pm2:start": "pm2 start ecosystem.config.cjs",
+    "pm2:stop": "pm2 stop scoutbot",
+    "pm2:delete": "pm2 delete scoutbot",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

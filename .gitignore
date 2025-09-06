@@ -1,3 +1,6 @@
 node_modules
 .env.*
 travian/train-troops.js
+*.txt
+logs
+screenshots
